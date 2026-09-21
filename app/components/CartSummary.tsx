@@ -41,6 +41,17 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
         giftCardHeadingId={giftCardHeadingId}
         giftCardInputId={giftCardInputId}
       />
+      <CartOrderDiscounts discountAllocations={cart?.discountAllocations} />
+      <dl role="group" className="cart-total">
+        <dt>Total</dt>
+        <dd>
+          {cart?.cost?.totalAmount?.amount ? (
+            <Money data={cart?.cost?.totalAmount} />
+          ) : (
+            '-'
+          )}
+        </dd>
+      </dl>
       <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
     </div>
   );
@@ -74,7 +85,7 @@ function CartDiscounts({
       ?.map(({code}) => code) || [];
 
   return (
-    <section aria-label="Discounts">
+    <section aria-label="Discounts" class="discount_inputs">
       {/* Have existing discount, display it with a remove option */}
       <dl hidden={!codes.length}>
         <div>
@@ -114,6 +125,36 @@ function CartDiscounts({
         </div>
       </UpdateDiscountForm>
     </section>
+  );
+}
+
+/**
+ * Shows order-level (cart-wide) automatic or custom discounts near the Total.
+ * Code-based discounts are excluded here since they're already shown above
+ * (with their code and a remove button) via CartDiscounts.
+ */
+function CartOrderDiscounts({
+  discountAllocations,
+}: {
+  discountAllocations?: CartApiQueryFragment['discountAllocations'];
+}) {
+  const titledDiscounts = (discountAllocations || []).filter(
+    (discount) => 'title' in discount && discount.title,
+  );
+
+  if (!titledDiscounts.length) return null;
+
+  return (
+    <dl className="cart-order-discounts">
+      {titledDiscounts.map((discount, index) => (
+        <div key={index} className="cart-discount cart-order-discount-badge">
+          <dt>🏷️ {'title' in discount ? discount.title : 'Discount'}</dt>
+          <dd>
+            -<Money data={discount.discountedAmount} />
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -193,7 +234,7 @@ function CartGiftCard({
   };
 
   return (
-    <section aria-label="Gift cards">
+    <section aria-label="Gift cards" class="discount_inputs">
       {giftCardCodes && giftCardCodes.length > 0 && (
         <dl>
           <dt id={giftCardHeadingId}>Applied Gift Card(s)</dt>

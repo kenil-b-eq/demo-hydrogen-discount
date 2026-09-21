@@ -22,6 +22,20 @@ export const CART_QUERY_FRAGMENT = `#graphql
         ...Money
       }
     }
+    discountAllocations {
+      discountedAmount {
+        ...Money
+      }
+      ... on CartCodeDiscountAllocation {
+        code
+      }
+      ... on CartAutomaticDiscountAllocation {
+        title
+      }
+      ... on CartCustomDiscountAllocation {
+        title
+      }
+    }
     merchandise {
       ... on ProductVariant {
         id
@@ -76,6 +90,20 @@ export const CART_QUERY_FRAGMENT = `#graphql
       }
       compareAtAmountPerQuantity {
         ...Money
+      }
+    }
+    discountAllocations {
+      discountedAmount {
+        ...Money
+      }
+      ... on CartCodeDiscountAllocation {
+        code
+      }
+      ... on CartAutomaticDiscountAllocation {
+        title
+      }
+      ... on CartCustomDiscountAllocation {
+        title
       }
     }
     merchandise {
@@ -157,6 +185,20 @@ export const CART_QUERY_FRAGMENT = `#graphql
       }
       totalTaxAmount {
         ...Money
+      }
+    }
+    discountAllocations {
+      discountedAmount {
+        ...Money
+      }
+      ... on CartCodeDiscountAllocation {
+        code
+      }
+      ... on CartAutomaticDiscountAllocation {
+        title
+      }
+      ... on CartCustomDiscountAllocation {
+        title
       }
     }
     note

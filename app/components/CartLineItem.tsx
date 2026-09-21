@@ -1,6 +1,11 @@
 import type {CartLineUpdateInput} from '@shopify/hydrogen/storefront-api-types';
 import type {CartLayout, LineItemChildrenMap} from '~/components/CartMain';
-import {CartForm, Image, type OptimisticCartLine} from '@shopify/hydrogen';
+import {
+  CartForm,
+  Image,
+  Money,
+  type OptimisticCartLine,
+} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';
 import {ProductPrice} from './ProductPrice';
@@ -11,6 +16,23 @@ import type {
 } from 'storefrontapi.generated';
 
 export type CartLine = OptimisticCartLine<CartApiQueryFragment>;
+
+/**
+ * Computes the "was" (compare-at) price for a cart line, scaled by quantity,
+ * so it lines up with the discounted `line.cost.totalAmount` shown next to it.
+ * Returns undefined when the line has no compare-at price (i.e. not on sale).
+ */
+function getLineCompareAtPrice(line: CartLine) {
+  const compareAtAmountPerQuantity = line?.cost?.compareAtAmountPerQuantity;
+  if (!compareAtAmountPerQuantity) return undefined;
+
+  return {
+    amount: (
+      Number(compareAtAmountPerQuantity.amount) * line.quantity
+    ).toString(),
+    currencyCode: compareAtAmountPerQuantity.currencyCode,
+  };
+}
 
 /**
  * A single line item in the cart. It displays the product image, title, price.
@@ -62,7 +84,11 @@ export function CartLineItem({
               <strong>{product.title}</strong>
             </p>
           </Link>
-          <ProductPrice price={line?.cost?.totalAmount} />
+          <ProductPrice
+            price={line?.cost?.totalAmount}
+            compareAtPrice={getLineCompareAtPrice(line)}
+          />
+          <CartLineDiscount discountAllocations={line.discountAllocations} />
           <ul>
             {selectedOptions.map((option) => (
               <li key={option.name}>
@@ -94,6 +120,42 @@ export function CartLineItem({
         </div>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * Shows a badge for each discount applied to this specific line item
+ * (either a discount code, an automatic discount, or a custom/app discount).
+ * Renders nothing when the line has no discounts.
+ */
+function CartLineDiscount({
+  discountAllocations,
+}: {
+  discountAllocations: CartLine['discountAllocations'];
+}) {
+  if (!discountAllocations?.length) return null;
+
+  return (
+    <ul className="cart-line-discounts">
+      {discountAllocations.map((discount, index) => {
+        const label =
+          'code' in discount && discount.code
+            ? discount.code
+            : 'title' in discount && discount.title
+              ? discount.title
+              : 'Discount';
+
+        return (
+          <li key={index} className="cart-discount cart-line-discount-badge">
+            <span>🏷️ {label}</span>
+            {/* &nbsp;
+            <small>
+              -<Money data={discount.discountedAmount} />
+            </small> */}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
